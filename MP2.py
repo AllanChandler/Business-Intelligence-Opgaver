@@ -21,6 +21,10 @@ if uploaded_file is not None:
         # Forbereder data: Vælger kun de numeriske kolonner
         vin_data_numeric = df.select_dtypes(include=['float64', 'int64'])
 
+        if vin_data_numeric.empty:
+            st.error("Ingen numeriske kolonner fundet i data. Tjek at filen indeholder talværdier.")
+            st.stop()
+
         # Standardisering af de numeriske data
         scaler = StandardScaler()
         vin_data_scaled = scaler.fit_transform(vin_data_numeric)
@@ -33,6 +37,8 @@ if uploaded_file is not None:
         # Tilføjer kvalitetskolonnen (hvis den findes) til pca_df for farvekodning
         if 'quality' in df.columns:
             pca_df["quality"] = df["quality"]
+        else:
+            pca_df["quality"] = "Ukendt"
 
         # 2D visualisering
         st.subheader("2D PCA-visualisering")
@@ -46,15 +52,13 @@ if uploaded_file is not None:
 
         # Tilføjer Wikipedia information om vinens kvalitet
         try:
-            # Henter artikel om vinens kvalitet fra Wikipedia
-            wine_quality_info = wikipedia.page("Wine_quality").content
+            wine_quality_info = wikipedia.page("Wine quality").content
             st.subheader("Information om vinens kvalitet")
-            # Viser hele artiklen (eller en del af den)
-            st.write(wine_quality_info)
+            st.write(wine_quality_info[:1500] + "...")
         except wikipedia.exceptions.DisambiguationError as e:
-            st.error(f"Fejl: Wikipedia kunne ikke finde præcise resultater for vinens kvalitet. Forsøg at søge på en specifik vin.")
+            st.error("Wikipedia kunne ikke finde en entydig artikel. Prøv et mere specifikt søgeord.")
         except wikipedia.exceptions.HTTPTimeoutError:
-            st.error("Fejl: Tid udløb under hentning af Wikipedia-artikel.")
-        
+            st.error("Tidsgrænse overskredet under hentning af Wikipedia-artikel.")
+
     except Exception as e:
         st.error(f"Der opstod en fejl under filbehandling: {str(e)}")
